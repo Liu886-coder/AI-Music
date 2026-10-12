@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.env
+.env.local
+**/.venv/
+.pytest_cache/
+.idea/
+backend/server-*.log
+backend/logs/
+backend/music_agent.db
+backend/*.db
+backend/*.db-*
+backend/*.bak
+frontend/node_modules/
+frontend/dist/
+outputs/
+work/

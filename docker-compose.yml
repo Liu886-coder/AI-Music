@@ -1,0 +1,15 @@
+services:
+  backend:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      MOCK_MODE: "true"
+      DATABASE_URL: sqlite:///./music_agent.db
+    volumes: ["./backend:/app"]
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports: ["5173:5173"]
+    volumes: ["./frontend:/app"]
+    depends_on: [backend]
