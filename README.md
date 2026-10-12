@@ -2,6 +2,13 @@
 
 一个可运行的 FastAPI + Vue 3 音乐推荐 Agent：用户用自然语言和筛选条件描述需求，后端调用音乐数据源，完成候选检索、过滤、排序、去重，并记录历史与反馈。
 
+## 项目展示图片
+<p align="center">
+  <img src="docs/填写需求.png" alt="填写推荐需求" width="45%">
+  &nbsp;&nbsp;
+  <img src="docs/结合用户需求推荐的歌曲.png" alt="音乐推荐结果" width="45%">
+</p>
+
 ## 功能
 
 - Mock 模式开箱即用，无 API Key 也能推荐
