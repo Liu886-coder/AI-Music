@@ -25,7 +25,7 @@
 
 Vue 3 + Vite → FastAPI → LLM 制定检索计划 → 白名单工具检索 → 补充标签、硬条件过滤和排序 → LLM 根据结果决定下一轮或结束 → SQLite/SQLAlchemy。歌曲、标签、链接与推荐理由的证据来自数据源。每轮观测和最终评估记录到 JSONL 日志。完整模块职责、预算、响应字段和评估口径见 [后端说明](backend/README.md)。
 
-## 启动
+## 快速启动本项目
 
 要求 Python 3.11+、Node.js 20+。
 
@@ -33,18 +33,13 @@ Vue 3 + Vite → FastAPI → LLM 制定检索计划 → 白名单工具检索 �
 
 ```powershell
 cd backend
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-if (-not (Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host '.env 已存在，跳过复制' }
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
 在 `frontend/.env.local` 中设置 `VITE_API_BASE_URL=http://127.0.0.1:8001/api`，确保前端连接同一端口。然后从项目根目录另开终端：
 
 ```powershell
 cd frontend
-npm install
 npm run dev -- --configLoader runner
 ```
 
@@ -52,27 +47,16 @@ npm run dev -- --configLoader runner
 
 本地开发统一使用后端端口 8001。若修改端口，必须同时修改后端的 `--port` 参数和 `frontend/.env.local` 中的地址。修改前端环境配置后，重启 Vite 并刷新浏览器。保持前后端两个终端运行；后端带 `--reload`，保存 Python 代码后会自动重新加载。
 
-## Docker
-
-```powershell
-docker compose up --build
-```
 
 ## 配置
 
-`.env.example` 包含 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`、`LLM_MOCK_MODE`、`LASTFM_API_KEY`、`DATABASE_URL`、`MOCK_MODE`。默认 `MOCK_MODE=true`；切换为 false 并填写 Last.fm API Key 后使用真实搜索。要启用 LLM，填写前三项并保持 `LLM_MOCK_MODE=false`。模型的 Base URL 必须是 OpenAI 兼容接口的根地址，后端会请求其 `/chat/completions`。密钥只保存在 `backend/.env`，绝不写入前端或提交 Git。
+`.env.example` 包含 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`、`LLM_MOCK_MODE`、`LASTFM_API_KEY`、`DATABASE_URL`、`MOCK_MODE`。
+默认 `MOCK_MODE=true`；切换为 false 要填写 Last.fm API Key 后使用真实搜索。
+要启用 LLM，填写前三项并保持 `LLM_MOCK_MODE=false`。
+模型的 Base URL 必须是 OpenAI 兼容接口的根地址，后端会请求其 `/chat/completions`。
 
-后端固定读取 `backend/.env`，不依赖启动目录；系统环境变量优先于该文件。修改后需要重启后端。实时模式缺少 Last.fm Key 会返回配置错误，不会自动使用 Mock 数据。页面连接失败显示“后端未连接”。`RECOMMENDATION_TIMEOUT_SECONDS` 默认 45 秒，前端推荐请求最多等待 50 秒，其他 API 最多等待 8 秒。
-
-如果页面显示“套接字权限错误”，表示后端连接被系统或运行环境拒绝，尚未验证密钥。停止当前后端后，在 Windows 普通 PowerShell 中进入 `backend`，运行 `.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001` 再试。若仍失败，检查防火墙和代理软件；HTTPX 可读取 `HTTPS_PROXY` 等环境变量，Windows 系统代理不一定会自动供 Python 使用。DNS 返回 `198.18.*.*` 可能是代理软件的 Fake-IP，单凭该地址不能判断网络异常。
-
-## API
-
-- `POST /api/recommend`：请求同时包含 `request_text` 与 `preferences`。`preferences` 形如 `{"scene":"workout","mood":"energetic","genres":["rock"],"language":"any","energy":"high","familiarity":"mixed"}`；推荐数量最少 20、最多 50。
-- `POST /api/feedback`：feedback_type 为 like/dislike/skip/save
-- `GET/PUT /api/preferences/{user_id}`
-- `GET /api/history/{user_id}`
-- `GET /api/health`
+后端固定读取 `backend/.env`，不依赖启动目录；系统环境变量优先于该文件。修改后需要重启后端。实时模式缺少 Last.fm Key 会返回配置错误，不会自动使用 Mock 数据。
+`
 
 ## 推荐算法
 
@@ -109,16 +93,8 @@ docker compose up --build
 
 ## 当前限制
 
-- 选择语言后，优先检索并补全该语言的候选标签，排除缺少对应语言标签的歌曲；历史偏好不能绕过语言筛选，数量不足时不使用其他语言补足。Last.fm 社区标签可能误标，卡片明确提示尚未核验歌词语言。BPM、能量和熟悉度也不等同于标签，无法验证时会明确标记。
+- Last.fm 社区标签可能误标，卡片明确提示尚未核验歌词语言。
 - Mock 数据集只有 12 首歌曲，因此 Mock 模式下无法实际返回 20 首；真实 Last.fm 模式会尽量补足，候选仍不足时会显示提示。
 - 学习的是数据源提供的标签和艺人倾向，不代表已验证歌曲语言、情绪或 BPM。没有标签就不会推断标签；暂未实现时间衰减、协同过滤和账号登录。用户隔离依赖 user_id。
 
-## 本次验证
 
-- 后端测试覆盖反馈持久化、用户隔离、API 往返、迁移、规划契约、工具白名单、检索迭代、硬条件、超时与取消、日志脱敏和汇总。
-- 离线评估覆盖华语／日语检索重试、纯音乐标签证据、重复查询终止；使用脚本规划器和模拟工具，只验证流程正确性。
-- 本次未修改前端；测试不调用用户真实音乐或 LLM 密钥。真实供应商在线联调与推荐质量评测尚未执行，不能把流程测试通过视为推荐质量提升的证明。
-
-## 参与贡献
-
-欢迎通过 Issue 报告问题或提交 Pull Request。开发环境、测试命令和提交要求见 [贡献指南](CONTRIBUTING.md)；安全问题请按 [安全政策](SECURITY.md) 私下报告。项目使用 [MIT License](LICENSE)。
